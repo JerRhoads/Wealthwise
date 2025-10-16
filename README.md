@@ -1,2 +1,2 @@
 # Wealthwise App
-HTML and React app that works as a rudimentary financial planner. 
+HTML and Node.js app that works as a rudimentary financial planner. 
