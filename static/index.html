@@ -1,0 +1,247 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>WealthWise v2 — Personal Finance Intelligence</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Chart.js + plugins -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <!-- Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>💰 WealthWise v2</h1>
+      <p>Personal Finance Intelligence — Planning • Benchmarks • Spending Insights • Goals</p>
+    </div>
+
+    <div class="topbar">
+      <div class="user-row">
+        <label>User ID</label>
+        <input id="userId" value="demo"/>
+        <button class="btn" id="btnLoadProfile">Load</button>
+        <button class="btn" id="btnSaveProfile">Save</button>
+      </div>
+      <div class="health-score">
+        <div id="healthBadge">Score: —</div>
+        <div id="badgeTray"></div>
+        <div id="streakLabel">Streak: 0🔥</div>
+      </div>
+      <div>
+        <button class="btn secondary" id="btnExport">Export PDF</button>
+      </div>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-tab="planner">📊 Planner</button>
+      <button class="nav-tab" data-tab="spending">💸 Spending</button>
+      <button class="nav-tab" data-tab="allocation">📦 Allocation</button>
+      <button class="nav-tab" data-tab="goals">🎯 Goals</button>
+      <button class="nav-tab" data-tab="settings">⚙️ Settings</button>
+    </div>
+
+    <!-- PLANNER -->
+    <div id="planner" class="tab-content active">
+      <div class="card gradient-purple">
+        <h2>Complete Financial Profile</h2>
+        <div class="grid">
+          <div class="field">
+            <label>Age</label>
+            <input type="number" id="age" min="18" max="100" />
+          </div>
+          <div class="field">
+            <label>Credit Score</label>
+            <input type="number" id="creditScore" min="300" max="850" />
+          </div>
+          <div class="field">
+            <label>Annual Income ($)</label>
+            <input type="number" id="annualIncome" min="0" />
+          </div>
+          <div class="field">
+            <label>Current Cash/Savings ($)</label>
+            <input type="number" id="currentMoney" min="0" />
+          </div>
+          <div class="field">
+            <label>Total Asset Value ($)</label>
+            <input type="number" id="assetValue" min="0" />
+          </div>
+          <div class="field">
+            <label>Total Debt ($)</label>
+            <input type="number" id="totalDebt" min="0" />
+          </div>
+          <div class="field">
+            <label>Student Loans ($)</label>
+            <input type="number" id="studentLoans" min="0" />
+          </div>
+          <div class="field">
+            <label>Avg Debt Interest Rate (%)</label>
+            <input type="number" id="debtInterestRate" step="0.1" min="0" max="30" />
+          </div>
+        </div>
+        <div class="grid sliders">
+          <div class="field">
+            <label>Expected Return (%)</label>
+            <input type="range" id="expReturn" min="4" max="10" step="0.5"/>
+            <div class="help" id="expReturnLabel">7.0%</div>
+          </div>
+          <div class="field">
+            <label>Inflation (%)</label>
+            <input type="range" id="inflation" min="1" max="6" step="0.5"/>
+            <div class="help" id="inflationLabel">3.0%</div>
+          </div>
+          <div class="field">
+            <label>Monthly Savings Rate (%)</label>
+            <input type="range" id="saveRate" min="5" max="40" step="1"/>
+            <div class="help" id="saveRateLabel">15%</div>
+          </div>
+          <div class="field">
+            <label>Sensitivity</label>
+            <select id="sensitivity">
+              <option value="conservative">Conservative</option>
+              <option value="base" selected>Base</option>
+              <option value="aggressive">Aggressive</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn primary" id="btnCompute">🚀 Compute Plan</button>
+      </div>
+
+      <div class="summary-grid" id="summaryGrid"></div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <h3>💹 Wealth Projection (Nominal vs Real)</h3>
+          <canvas id="growthChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>📉 Debt Payoff Timelines</h3>
+          <canvas id="debtChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>📊 Benchmarks vs You</h3>
+          <canvas id="benchmarksChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card recommendations">
+        <h2>🎯 Recommendations & Budget</h2>
+        <div id="recList"></div>
+        <div class="budget-table">
+          <table id="budgetTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPENDING -->
+    <div id="spending" class="tab-content">
+      <div class="card gradient-blue">
+        <h2>Bank Statement Analysis</h2>
+        <div class="upload-area" id="dropArea">
+          <input type="file" id="csvFile" class="file-input" accept=".csv"/>
+          <h3>📁 Drop CSV or click to browse</h3>
+          <p>Expected columns: Date, Description, Amount (negative for expenses)</p>
+        </div>
+        <button class="btn" id="btnAnalyze" disabled>🔍 Analyze My Spending</button>
+      </div>
+
+      <div class="summary-grid" id="spendSummaryGrid"></div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <h3>📊 Spending by Category</h3>
+          <canvas id="categoryChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>📈 Monthly Trends</h3>
+          <canvas id="trendsChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>🗓️ Daily Heatmap</h3>
+          <div id="heatmap" class="heatmap"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>💡 Insights</h2>
+        <div id="spendingInsights"></div>
+      </div>
+
+      <!-- Merchant Drilldown Modal -->
+      <div id="modal" class="modal">
+        <div class="modal-content">
+          <span id="modalClose" class="close">&times;</span>
+          <h3 id="modalTitle">Category Details</h3>
+          <div id="modalBody"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALLOCATION -->
+    <div id="allocation" class="tab-content">
+      <div class="card gradient-orange">
+        <h2>Real vs Target Allocation</h2>
+        <p>Set your current allocation and compare with target based on age/income.</p>
+        <div class="grid sliders">
+          <div class="field"><label>Cash</label><input type="range" id="allocCash" min="0" max="100" value="20"/><div class="help" id="allocCashLabel">20%</div></div>
+          <div class="field"><label>Stocks</label><input type="range" id="allocStocks" min="0" max="100" value="50"/><div class="help" id="allocStocksLabel">50%</div></div>
+          <div class="field"><label>Bonds</label><input type="range" id="allocBonds" min="0" max="100" value="20"/><div class="help" id="allocBondsLabel">20%</div></div>
+          <div class="field"><label>Real Estate / REITs</label><input type="range" id="allocRE" min="0" max="100" value="10"/><div class="help" id="allocRELabel">10%</div></div>
+        </div>
+        <button class="btn" id="btnAllocRecalc">Recalculate Target</button>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <h3>🎯 Target Allocation</h3>
+          <canvas id="targetAllocChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>📦 Your Current Allocation</h3>
+          <canvas id="currentAllocChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Gap to Target</h3>
+          <canvas id="allocGapChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- GOALS -->
+    <div id="goals" class="tab-content">
+      <div class="card gradient-green">
+        <h2>Goal Planner</h2>
+        <div class="grid">
+          <div class="field"><label>Goal Name</label><input id="goalName" placeholder="House Down Payment"/></div>
+          <div class="field"><label>Target Amount ($)</label><input type="number" id="goalTarget" min="0"/></div>
+          <div class="field"><label>Current Saved ($)</label><input type="number" id="goalSaved" min="0"/></div>
+          <div class="field"><label>Monthly Contribution ($)</label><input type="number" id="goalMonthly" min="0"/></div>
+        </div>
+        <button class="btn primary" id="btnAddGoal">Add/Update Goal</button>
+        <button class="btn" id="btnSaveGoals">Save Goals</button>
+        <button class="btn" id="btnLoadGoals">Load Goals</button>
+      </div>
+
+      <div id="goalList" class="goals-grid"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="settings" class="tab-content">
+      <div class="card">
+        <h2>Settings & Data</h2>
+        <p>Local data is auto-saved to your browser. Use the buttons to sync with the backend.</p>
+        <button class="btn" id="btnSaveSnapshot">Save Health Snapshot (Cloud)</button>
+        <button class="btn" id="btnLoadSnapshot">Load Health Snapshot</button>
+        <pre id="snapshotViewer" class="code"></pre>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
